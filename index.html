@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BatyrSoft — AI Video Builder (Local SDXL)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            black: '#000000',
+            dark: {
+              950: '#000000',
+              900: '#050505',
+              800: '#0a0a0a',
+              700: '#111111',
+              600: '#1a1a1a',
+              500: '#222222',
+              400: '#333333',
+            },
+            blue: {
+              600: '#1e3a8a',
+              500: '#1e40af',
+              400: '#2563eb',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #000000; }
+    .sidebar-item.active { background: rgba(30,58,138,0.35); color: #93c5fd; }
+    .card { background: #0a0a0a; border: 1px solid #1a1a1a; }
+    input, textarea, select {
+      background: #111111 !important;
+      border: 1px solid #222222 !important;
+      color: #e5e5e5 !important;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #1e40af !important; }
+    .btn-primary { background: #1e3a8a; }
+    .btn-primary:hover { background: #1e40af; }
+    .btn-danger { background: #7f1d1d; }
+    .btn-danger:hover { background: #991b1b; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+  </style>
+</head>
+<body class="dark text-gray-200 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-56 bg-black border-r border-dark-600 flex flex-col flex-shrink-0">
+    <div class="p-4 flex items-center gap-3 border-b border-dark-600">
+      <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-sm">B</div>
+      <div>
+        <div class="font-semibold text-sm tracking-wide">BatyrSoft</div>
+        <div class="text-[10px] text-gray-500">AI video builder</div>
+      </div>
+    </div>
+
+    <nav class="flex-1 p-2 space-y-0.5">
+      <button onclick="showPage('create')" class="sidebar-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-dark-700 transition" data-page="create">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Создать
+      </button>
+      <button onclick="showPage('dub')" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-dark-700 transition" data-page="dub">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+        Дубляж
+      </button>
+      <button onclick="showPage('queue')" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-dark-700 transition" data-page="queue">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        Ночной режим
+      </button>
+      <button onclick="showPage('history')" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-dark-700 transition" data-page="history">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        История
+      </button>
+      <button onclick="showPage('projects')" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-dark-700 transition" data-page="projects">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        Проекты
+      </button>
+      <button onclick="showPage('settings')" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-dark-700 transition" data-page="settings">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Настройки
+      </button>
+    </nav>
+
+    <div class="p-3 border-t border-dark-600 text-[10px] text-gray-600">
+      BatyrSoft v1.2 · Local SDXL
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-hidden flex flex-col bg-black">
+
+    <!-- CREATE PAGE -->
+    <div id="page-create" class="flex-1 flex overflow-hidden">
+      <!-- Left -->
+      <div class="w-full lg:w-[400px] xl:w-[440px] p-5 overflow-y-auto border-r border-dark-600 flex-shrink-0">
+        <h1 class="text-lg font-semibold mb-0.5">Создать видео</h1>
+        <p class="text-gray-500 text-xs mb-5">MP3 → картинки → материал для CapCut</p>
+
+        <div class="card rounded-xl p-4 space-y-4">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Название проекта</label>
+            <input id="projectName" type="text" value="MyVideo" class="w-full rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">Стиль картинок</label>
+            <textarea id="stylePrompt" rows="2" class="w-full rounded-lg px-3 py-2 text-sm" placeholder="cinematic, photorealistic, dramatic lighting..."></textarea>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">MP3 файл озвучки</label>
+            <div id="dropzone" class="border-2 border-dashed border-dark-500 rounded-xl p-5 text-center cursor-pointer hover:border-blue-500 transition">
+              <input type="file" id="audioFile" accept="audio/*,.mp3,.wav,.m4a" class="hidden" />
+              <div class="text-gray-500">
+                <svg class="w-7 h-7 mx-auto mb-1.5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                <p class="text-xs">Перетащи или <span class="text-blue-400">выбери</span></p>
+                <p id="fileName" class="text-[10px] mt-1 text-blue-300 hidden"></p>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnGenerate" onclick="startGenerate()" class="flex-1 btn-primary text-white font-medium py-2.5 rounded-lg transition disabled:opacity-40 text-sm">
+              Запустить
+            </button>
+            <button id="btnCancel" onclick="cancelGenerate()" class="btn-danger text-white font-medium py-2.5 px-4 rounded-lg transition hidden text-sm">
+              Отмена
+            </button>
+          </div>
+        </div>
+
+        <div id="progressBox" class="card rounded-xl p-4 mt-4 hidden">
+          <div class="flex justify-between text-xs mb-1.5">
+            <span id="progressStage">Подготовка...</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="w-full bg-dark-600 rounded-full h-1.5">
+            <div id="progressBar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <p id="progressMsg" class="text-[11px] text-gray-500 mt-2"></p>
+        </div>
+      </div>
+
+      <!-- Right gallery -->
+      <div class="flex-1 p-5 overflow-y-auto" id="galleryPanel">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-medium text-gray-400 uppercase tracking-wider">Живая галерея</h2>
+          <span id="galleryCount" class="text-[11px] text-gray-600">0 картинок</span>
+        </div>
+        <div id="galleryEmpty" class="h-48 flex items-center justify-center text-gray-700 text-xs border border-dashed border-dark-600 rounded-xl">
+          Картинки появятся здесь по мере генерации
+        </div>
+        <div id="galleryGrid" class="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 hidden"></div>
+      </div>
+    </div>
+
+    <!-- DUBBING PAGE -->
+    <div id="page-dub" class="p-6 hidden overflow-y-auto flex-1">
+      <h1 class="text-lg font-semibold mb-1">Дубляж</h1>
+      <p class="text-gray-500 text-xs mb-6">Русское видео/аудио → готовая озвучка на другом языке (Lumean + синхронизация)</p>
+
+      <div class="card rounded-xl p-5 max-w-xl space-y-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Название проекта</label>
+          <input id="dubProjectName" type="text" value="DubVideo" class="w-full rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Исходный язык</label>
+          <select id="dubSourceLang" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="ru" selected>Русский</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Целевой язык</label>
+          <select id="dubTargetLang" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="es">Испанский (es)</option>
+            <option value="fr">Французский (fr)</option>
+            <option value="tr">Турецкий (tr)</option>
+            <option value="it">Итальянский (it)</option>
+            <option value="ja">Японский (ja)</option>
+            <option value="pl">Польский (pl)</option>
+            <option value="ar">Арабский (ar)</option>
+            <option value="en">Английский (en)</option>
+            <option value="de">Немецкий (de)</option>
+            <option value="pt">Португальский (pt)</option>
+            <option value="nl">Голландский (nl)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Шаблон голоса (Lumean)</label>
+          <div class="flex gap-2">
+            <select id="dubTemplateId" class="flex-1 rounded-lg px-3 py-2 text-sm">
+              <option value="">— сначала загрузите шаблоны —</option>
+            </select>
+            <button onclick="loadLumeanTemplates()" class="btn-primary text-white text-xs px-3 rounded-lg whitespace-nowrap">Обновить</button>
+          </div>
+          <p class="text-[10px] text-gray-600 mt-1">Шаблоны берутся из твоего аккаунта Lumean. Создай шаблон с нужным голосом на lumean.app</p>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Видео или аудио файл</label>
+          <div id="dubDropzone" class="border-2 border-dashed border-dark-500 rounded-xl p-5 text-center cursor-pointer hover:border-blue-500 transition">
+            <input type="file" id="dubFile" accept="video/*,audio/*,.mp4,.mp3,.wav,.m4a,.mov" class="hidden" />
+            <div class="text-gray-500">
+              <svg class="w-7 h-7 mx-auto mb-1.5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+              <p class="text-xs">Перетащи или <span class="text-blue-400">выбери</span></p>
+              <p id="dubFileName" class="text-[10px] mt-1 text-blue-300 hidden"></p>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnDub" onclick="startDubbing()" class="flex-1 btn-primary text-white font-medium py-2.5 rounded-lg transition disabled:opacity-40 text-sm">Сгенерировать озвучку</button>
+          <button id="btnDubCancel" onclick="cancelGenerate()" class="btn-danger text-white font-medium py-2.5 px-4 rounded-lg transition hidden text-sm">Отмена</button>
+        </div>
+      </div>
+
+      <div id="dubProgressBox" class="card rounded-xl p-4 mt-4 max-w-xl hidden">
+        <div class="flex justify-between text-xs mb-1.5">
+          <span id="dubProgressStage">Подготовка...</span>
+          <span id="dubProgressPercent">0%</span>
+        </div>
+        <div class="w-full bg-dark-600 rounded-full h-1.5">
+          <div id="dubProgressBar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p id="dubProgressMsg" class="text-[11px] text-gray-500 mt-2"></p>
+        <div id="dubResult" class="mt-3 hidden">
+          <a id="dubDownloadLink" href="#" class="text-sm text-blue-400 hover:underline" download>⬇ Скачать готовую озвучку</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUEUE / NIGHT MODE -->
+    <div id="page-queue" class="p-6 hidden overflow-y-auto flex-1">
+      <h1 class="text-lg font-semibold mb-1">Ночной режим</h1>
+      <p class="text-gray-500 text-xs mb-6">Добавь несколько MP3 — они будут генерироваться по очереди автоматически.</p>
+
+      <div class="card rounded-xl p-5 max-w-xl space-y-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Стиль для всей очереди</label>
+          <textarea id="queueStyle" rows="2" class="w-full rounded-lg px-3 py-2 text-sm" placeholder="cinematic, photorealistic..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Файлы (можно несколько)</label>
+          <input type="file" id="queueFiles" accept="audio/*,.mp3,.wav,.m4a" multiple class="w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:text-xs" />
+        </div>
+        <button onclick="addToQueue()" class="w-full btn-primary text-white font-medium py-2.5 rounded-lg text-sm">
+          Добавить в очередь
+        </button>
+      </div>
+
+      <div class="mt-6">
+        <h2 class="text-sm font-medium mb-3">Очередь <span id="queueLen" class="text-gray-500">(0)</span></h2>
+        <div id="queueList" class="space-y-2 max-w-xl">
+          <p class="text-gray-600 text-xs">Очередь пуста</p>
+        </div>
+        <button id="btnStartQueue" onclick="startQueue()" class="mt-4 btn-primary text-white font-medium py-2.5 px-6 rounded-lg text-sm hidden">
+          Запустить очередь
+        </button>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="page-history" class="p-6 hidden overflow-y-auto flex-1">
+      <h1 class="text-lg font-semibold mb-1">История</h1>
+      <p class="text-gray-500 text-xs mb-6">Незавершённые и отменённые проекты. Можно продолжить.</p>
+      <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <p class="text-gray-600 text-xs">Загрузка...</p>
+      </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div id="page-projects" class="p-6 hidden overflow-y-auto flex-1">
+      <h1 class="text-lg font-semibold mb-6">Проекты</h1>
+      <div id="projectsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <p class="text-gray-600 text-xs">Загрузка...</p>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="p-6 max-w-xl hidden overflow-y-auto flex-1">
+      <h1 class="text-lg font-semibold mb-1">Настройки</h1>
+      <p class="text-gray-500 text-xs mb-6">API-ключи, CapCut и кэш. Всё хранится только на этой машине.</p>
+
+      <div class="card rounded-xl p-5 space-y-4">
+        <div>
+          <label class="block text-xs mb-1"><span class="text-red-400">★</span> OPENAI API KEY</label>
+          <input id="setOpenai" type="password" class="w-full rounded-lg px-3 py-2 text-sm" placeholder="sk-..." />
+          <p class="text-[10px] text-gray-600 mt-0.5">Нужен для транскрипции (Whisper) и перевода. Картинки — локально бесплатно.</p>
+        </div>
+        <div>
+          <label class="block text-xs mb-1"><span class="text-red-400">★</span> LUMEAN API KEY</label>
+          <input id="setLumean" type="password" class="w-full rounded-lg px-3 py-2 text-sm" placeholder="ключ из личного кабинета lumean.app" />
+          <p class="text-[10px] text-gray-600 mt-0.5">Нужен для озвучки (TTS). Создаётся в кабинете Lumean → API Keys.</p>
+        </div>
+        <div>
+          <label class="block text-xs mb-1">Модель генерации (локальная)</label>
+          <select id="setModel" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="stabilityai/sdxl-turbo">SDXL Turbo (быстро, 6 ГБ)</option>
+            <option value="ByteDance/SDXL-Lightning">SDXL Lightning</option>
+            <option value="stabilityai/stable-diffusion-xl-base-1.0">SDXL Base (медленнее, качество выше)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs mb-1">Шаги (steps)</label>
+            <input id="setSteps" type="number" min="1" max="30" value="4" class="w-full rounded-lg px-3 py-2 text-sm" />
+            <p class="text-[10px] text-gray-600 mt-0.5">Turbo: 1–4, Lightning: 2–8</p>
+          </div>
+          <div>
+            <label class="block text-xs mb-1">CPU Offload (для 6 ГБ)</label>
+            <select id="setOffload" class="w-full rounded-lg px-3 py-2 text-sm">
+              <option value="true">Включён (рекомендуется)</option>
+              <option value="false">Выключен</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="border-dark-600" />
+
+        <div>
+          <label class="block text-xs mb-1">Путь к проектам CapCut</label>
+          <input id="setCapcut" type="text" class="w-full rounded-lg px-3 py-2 text-sm" placeholder="C:\Users\...\AppData\Local\CapCut\User Data\Projects\com.lveditor.draft" />
+          <p class="text-[10px] text-gray-600 mt-0.5">Папка, куда CapCut сохраняет drafts</p>
+        </div>
+
+        <div>
+          <label class="block text-xs mb-1">Стиль по умолчанию</label>
+          <textarea id="setStyle" rows="2" class="w-full rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs mb-1">Длительность сцены (сек)</label>
+          <input id="setDuration" type="number" step="0.5" min="3" max="15" class="w-full rounded-lg px-3 py-2 text-sm" />
+        </div>
+
+        <button onclick="saveSettings()" class="w-full btn-primary text-white font-medium py-2.5 rounded-lg text-sm">
+          Сохранить настройки
+        </button>
+        <p id="settingsStatus" class="text-xs text-center hidden"></p>
+      </div>
+
+      <!-- Cache -->
+      <div class="card rounded-xl p-5 mt-4 space-y-3">
+        <h2 class="text-sm font-medium">Управление кэшем</h2>
+        <p id="cacheInfo" class="text-xs text-gray-500">Загрузка...</p>
+        <button onclick="clearCache()" class="btn-danger text-white text-xs font-medium py-2 px-4 rounded-lg">
+          Очистить кэш (uploads)
+        </button>
+      </div>
+    </div>
+
+    <!-- PROJECT VIEWER MODAL -->
+    <div id="projectModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
+      <div class="card rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-dark-600">
+          <div>
+            <h2 id="modalTitle" class="text-sm font-semibold">Проект</h2>
+            <p id="modalMeta" class="text-[10px] text-gray-500"></p>
+          </div>
+          <div class="flex gap-2">
+            <button id="modalResumeBtn" onclick="resumeProject()" class="btn-primary text-white text-xs font-medium py-1.5 px-3 rounded-lg hidden">Продолжить</button>
+            <button onclick="closeProjectModal()" class="text-gray-400 hover:text-white text-sm px-2">✕</button>
+          </div>
+        </div>
+        <div id="modalGallery" class="p-4 overflow-y-auto flex-1 grid grid-cols-2 md:grid-cols-3 gap-2">
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+<script>
+  let pollTimer = null;
+  let lastImagesCount = 0;
+  let queueItems = [];
+
+  function showPage(name) {
+    document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden'));
+    const page = document.getElementById('page-' + name);
+    page.classList.remove('hidden');
+    if (name === 'create') page.classList.add('flex');
+    else page.classList.remove('flex');
+    document.querySelectorAll('.sidebar-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === name);
+    });
+    if (name === 'projects') loadProjects();
+    if (name === 'history') loadHistory();
+    if (name === 'settings') { loadSettings(); loadCache(); }
+  }
+
+  // Dropzone
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('audioFile');
+  dropzone.onclick = () => fileInput.click();
+  dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add('border-blue-500'); };
+  dropzone.ondragleave = () => dropzone.classList.remove('border-blue-500');
+  dropzone.ondrop = e => {
+    e.preventDefault();
+    dropzone.classList.remove('border-blue-500');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      showFileName();
+    }
+  };
+  fileInput.onchange = showFileName;
+
+  function showFileName() {
+    const f = fileInput.files[0];
+    const el = document.getElementById('fileName');
+    if (f) {
+      el.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+      el.classList.remove('hidden');
+    }
+  }
+
+  async function loadSettings() {
+    const r = await fetch('/api/settings');
+    const d = await r.json();
+    document.getElementById('setOpenai').placeholder = d.has_openai ? d.openai_api_key_masked : 'sk-...';
+    const setLumean = document.getElementById('setLumean');
+    if (setLumean) setLumean.placeholder = d.has_lumean ? d.lumean_api_key_masked : 'ключ из личного кабинета lumean.app';
+    document.getElementById('setStyle').value = d.default_style || '';
+    document.getElementById('setDuration').value = d.scene_duration_sec || 5.5;
+    document.getElementById('setCapcut').value = d.capcut_projects_path || '';
+    if (document.getElementById('setModel')) document.getElementById('setModel').value = d.local_model || 'stabilityai/sdxl-turbo';
+    if (document.getElementById('setSteps')) document.getElementById('setSteps').value = d.inference_steps || 4;
+    if (document.getElementById('setOffload')) document.getElementById('setOffload').value = d.use_cpu_offload ? 'true' : 'false';
+  }
+
+  async function saveSettings() {
+    const body = {
+      openai_api_key: document.getElementById('setOpenai').value,
+      lumean_api_key: document.getElementById('setLumean') ? document.getElementById('setLumean').value : undefined,
+      default_style: document.getElementById('setStyle').value,
+      scene_duration_sec: parseFloat(document.getElementById('setDuration').value),
+      capcut_projects_path: document.getElementById('setCapcut').value,
+      local_model: document.getElementById('setModel') ? document.getElementById('setModel').value : undefined,
+      inference_steps: document.getElementById('setSteps') ? parseInt(document.getElementById('setSteps').value) : undefined,
+      use_cpu_offload: document.getElementById('setOffload') ? document.getElementById('setOffload').value === 'true' : true,
+    };
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const status = document.getElementById('settingsStatus');
+    if (r.ok) {
+      status.textContent = '✓ Сохранено';
+      status.className = 'text-xs text-center text-green-400';
+      document.getElementById('setOpenai').value = '';
+      if (document.getElementById('setLumean')) document.getElementById('setLumean').value = '';
+      loadSettings();
+    } else {
+      status.textContent = 'Ошибка';
+      status.className = 'text-xs text-center text-red-400';
+    }
+    status.classList.remove('hidden');
+  }
+
+  async function loadCache() {
+    const r = await fetch('/api/cache');
+    const d = await r.json();
+    document.getElementById('cacheInfo').textContent = `Кэш: ${d.size_mb} МБ · ${d.files} файлов`;
+  }
+
+  async function clearCache() {
+    if (!confirm('Очистить uploads и кэш? Проекты не удалятся.')) return;
+    const r = await fetch('/api/cache/clear', { method: 'POST' });
+    const d = await r.json();
+    document.getElementById('cacheInfo').textContent = `Кэш: ${d.size_mb} МБ · ${d.files} файлов (очищено ${d.removed})`;
+  }
+
+  function updateGallery(images) {
+    const grid = document.getElementById('galleryGrid');
+    const empty = document.getElementById('galleryEmpty');
+    const countEl = document.getElementById('galleryCount');
+    if (!images || images.length === 0) {
+      grid.classList.add('hidden');
+      empty.classList.remove('hidden');
+      countEl.textContent = '0 картинок';
+      return;
+    }
+    empty.classList.add('hidden');
+    grid.classList.remove('hidden');
+    countEl.textContent = images.length + ' картинок';
+    if (images.length > lastImagesCount) {
+      for (let i = lastImagesCount; i < images.length; i++) {
+        const img = images[i];
+        const card = document.createElement('div');
+        card.className = 'card rounded-lg overflow-hidden group cursor-pointer hover:ring-1 hover:ring-blue-500 transition';
+        card.onclick = () => window.open(img.url, '_blank');
+        card.innerHTML = `
+          <div class="aspect-video bg-dark-700 relative">
+            <img src="${img.url}" alt="Scene ${img.index}" class="w-full h-full object-cover" loading="lazy"
+                 onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full text-[10px] text-red-400\\'>ошибка</div>'"/>
+            <div class="absolute top-1 left-1 bg-black/80 text-[10px] px-1.5 py-0.5 rounded">#${img.index + 1}</div>
+          </div>
+          <div class="p-1.5">
+            <div class="text-[9px] text-gray-600">${img.start.toFixed(1)}s – ${img.end.toFixed(1)}s</div>
+            <div class="text-[10px] text-gray-500 truncate" title="${img.prompt || ''}">${img.prompt || ''}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+      lastImagesCount = images.length;
+      document.getElementById('galleryPanel').scrollTop = document.getElementById('galleryPanel').scrollHeight;
+    }
+  }
+
+  function resetGallery() {
+    lastImagesCount = 0;
+    document.getElementById('galleryGrid').innerHTML = '';
+    document.getElementById('galleryGrid').classList.add('hidden');
+    document.getElementById('galleryEmpty').classList.remove('hidden');
+    document.getElementById('galleryCount').textContent = '0 картинок';
+  }
+
+  async function startGenerate() {
+    const file = fileInput.files[0];
+    if (!file) { alert('Выбери MP3 файл'); return; }
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('project_name', document.getElementById('projectName').value || 'MyVideo');
+    fd.append('style', document.getElementById('stylePrompt').value);
+
+    document.getElementById('btnGenerate').disabled = true;
+    document.getElementById('btnCancel').classList.remove('hidden');
+    document.getElementById('progressBox').classList.remove('hidden');
+    resetGallery();
+
+    const r = await fetch('/api/generate', { method: 'POST', body: fd });
+    if (!r.ok) {
+      const err = await r.json();
+      alert(err.detail || 'Ошибка');
+      document.getElementById('btnGenerate').disabled = false;
+      document.getElementById('btnCancel').classList.add('hidden');
+      return;
+    }
+    startPolling();
+  }
+
+  async function cancelGenerate() {
+    await fetch('/api/cancel', { method: 'POST' });
+    document.getElementById('progressMsg').textContent = 'Отмена...';
+  }
+
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        const pr = await fetch('/api/progress');
+        const p = await pr.json();
+        document.getElementById('progressStage').textContent = p.stage;
+        document.getElementById('progressPercent').textContent = Math.round(p.progress) + '%';
+        document.getElementById('progressBar').style.width = p.progress + '%';
+        document.getElementById('progressMsg').textContent = p.message +
+          (p.scenes_total ? ` (${p.scenes_done}/${p.scenes_total})` : '');
+
+        if (p.ready_images && p.ready_images.length) updateGallery(p.ready_images);
+
+        if (['done', 'error', 'cancelled'].includes(p.stage)) {
+          clearInterval(pollTimer);
+          document.getElementById('btnGenerate').disabled = false;
+          document.getElementById('btnCancel').classList.add('hidden');
+          if (p.stage === 'done') {
+            document.getElementById('progressMsg').textContent = '✓ ' + p.message;
+          }
+          if (p.stage === 'cancelled') {
+            document.getElementById('progressMsg').textContent = '⏹ ' + p.message;
+          }
+        }
+      } catch (e) { console.error(e); }
+    }, 1200);
+  }
+
+  // Queue
+  function addToQueue() {
+    const files = document.getElementById('queueFiles').files;
+    const style = document.getElementById('queueStyle').value;
+    if (!files.length) { alert('Выбери файлы'); return; }
+    for (const f of files) {
+      queueItems.push({ file: f, name: f.name.replace(/\.[^.]+$/, ''), style });
+    }
+    renderQueue();
+    document.getElementById('queueFiles').value = '';
+  }
+
+  function renderQueue() {
+    const box = document.getElementById('queueList');
+    document.getElementById('queueLen').textContent = '(' + queueItems.length + ')';
+    document.getElementById('btnStartQueue').classList.toggle('hidden', queueItems.length === 0);
+    if (!queueItems.length) {
+      box.innerHTML = '<p class="text-gray-600 text-xs">Очередь пуста</p>';
+      return;
+    }
+    box.innerHTML = queueItems.map((q, i) => `
+      <div class="card rounded-lg p-3 flex items-center justify-between">
+        <div>
+          <div class="text-sm">${q.name}</div>
+          <div class="text-[10px] text-gray-500">${(q.file.size/1024/1024).toFixed(1)} MB</div>
+        </div>
+        <button onclick="queueItems.splice(${i},1); renderQueue()" class="text-red-400 text-xs hover:underline">удалить</button>
+      </div>
+    `).join('');
+  }
+
+  async function startQueue() {
+    if (!queueItems.length) return;
+    alert('Очередь запущена. Можно закрыть вкладку — генерация идёт на сервере. Следи за прогрессом во вкладке Создать.');
+    // Sequential: one by one
+    for (let i = 0; i < queueItems.length; i++) {
+      const item = queueItems[i];
+      const fd = new FormData();
+      fd.append('file', item.file);
+      fd.append('project_name', item.name);
+      fd.append('style', item.style || '');
+      showPage('create');
+      document.getElementById('projectName').value = item.name;
+      document.getElementById('btnGenerate').disabled = true;
+      document.getElementById('btnCancel').classList.remove('hidden');
+      document.getElementById('progressBox').classList.remove('hidden');
+      resetGallery();
+      const r = await fetch('/api/generate', { method: 'POST', body: fd });
+      if (!r.ok) continue;
+      // Wait until done
+      await new Promise(resolve => {
+        const t = setInterval(async () => {
+          const pr = await fetch('/api/progress');
+          const p = await pr.json();
+          document.getElementById('progressStage').textContent = p.stage + ` [${i+1}/${queueItems.length}]`;
+          document.getElementById('progressPercent').textContent = Math.round(p.progress) + '%';
+          document.getElementById('progressBar').style.width = p.progress + '%';
+          document.getElementById('progressMsg').textContent = p.message;
+          if (p.ready_images) updateGallery(p.ready_images);
+          if (['done', 'error', 'cancelled'].includes(p.stage)) {
+            clearInterval(t);
+            resolve();
+          }
+        }, 1500);
+      });
+    }
+    queueItems = [];
+    renderQueue();
+    document.getElementById('btnGenerate').disabled = false;
+    document.getElementById('btnCancel').classList.add('hidden');
+  }
+
+  let currentModalProjectId = null;
+
+  async function loadProjects() {
+    const r = await fetch('/api/projects');
+    const d = await r.json();
+    const box = document.getElementById('projectsList');
+    if (!d.projects.length) {
+      box.innerHTML = '<p class="text-gray-600 text-xs">Пока нет проектов</p>';
+      return;
+    }
+    box.innerHTML = d.projects.map(p => `
+      <div class="card rounded-xl p-4">
+        <div class="font-medium text-sm mb-0.5 truncate">${p.name}</div>
+        <div class="text-[10px] text-gray-500 mb-2">Картинок: ${p.images_count} · ${p.status}</div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="openProject('${p.id}')" class="text-xs text-blue-400 hover:underline">Открыть</button>
+          ${p.status !== 'done' ? `<button onclick="resumeProjectById('${p.id}')" class="text-xs text-green-400 hover:underline">Продолжить</button>` : ''}
+          <button onclick="deleteProject('${p.id}')" class="text-xs text-red-400 hover:underline">Удалить</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function loadHistory() {
+    const r = await fetch('/api/projects');
+    const d = await r.json();
+    const partial = d.projects.filter(p => p.status === 'cancelled' || p.status === 'partial' || p.status === 'empty');
+    const box = document.getElementById('historyList');
+    if (!partial.length) {
+      box.innerHTML = '<p class="text-gray-600 text-xs">Нет незавершённых проектов</p>';
+      return;
+    }
+    box.innerHTML = partial.map(p => `
+      <div class="card rounded-xl p-4">
+        <div class="font-medium text-sm mb-0.5 truncate">${p.name}</div>
+        <div class="text-[10px] text-gray-500 mb-2">
+          Статус: <span class="${p.status === 'cancelled' ? 'text-yellow-500' : 'text-gray-400'}">${p.status}</span>
+          · Картинок: ${p.images_count}
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="openProject('${p.id}')" class="text-xs text-blue-400 hover:underline">Открыть</button>
+          <button onclick="resumeProjectById('${p.id}')" class="text-xs text-green-400 hover:underline">Продолжить</button>
+          <button onclick="deleteProject('${p.id}')" class="text-xs text-red-400 hover:underline">Удалить</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function openProject(id) {
+    currentModalProjectId = id;
+    const r = await fetch('/api/projects/' + id);
+    if (!r.ok) { alert('Проект не найден'); return; }
+    const p = await r.json();
+    document.getElementById('modalTitle').textContent = p.id;
+    const st = (p.status && p.status.status) ? p.status.status : (p.images && p.images.length ? 'partial' : 'empty');
+    document.getElementById('modalMeta').textContent = `Статус: ${st} · Картинок: ${(p.images || []).length}`;
+    const resumeBtn = document.getElementById('modalResumeBtn');
+    if (st !== 'done') resumeBtn.classList.remove('hidden');
+    else resumeBtn.classList.add('hidden');
+
+    const gal = document.getElementById('modalGallery');
+    if (!p.images || !p.images.length) {
+      gal.innerHTML = '<p class="text-gray-600 text-xs col-span-full">Пока нет картинок</p>';
+    } else {
+      gal.innerHTML = p.images.map((url, i) => `
+        <div class="card rounded-lg overflow-hidden cursor-pointer" onclick="window.open('${url}', '_blank')">
+          <img src="${url}" class="w-full aspect-video object-cover" loading="lazy" />
+          <div class="p-1.5 text-[10px] text-gray-500">#${i + 1}</div>
+        </div>
+      `).join('');
+    }
+    document.getElementById('projectModal').classList.remove('hidden');
+  }
+
+  function closeProjectModal() {
+    document.getElementById('projectModal').classList.add('hidden');
+    currentModalProjectId = null;
+  }
+
+  async function resumeProject() {
+    if (!currentModalProjectId) return;
+    await resumeProjectById(currentModalProjectId);
+  }
+
+  async function resumeProjectById(id) {
+    if (!confirm('Продолжить генерацию этого проекта с того места, где остановились?')) return;
+    closeProjectModal();
+    showPage('create');
+    document.getElementById('btnGenerate').disabled = true;
+    document.getElementById('btnCancel').classList.remove('hidden');
+    document.getElementById('progressBox').classList.remove('hidden');
+    resetGallery();
+
+    const r = await fetch('/api/projects/' + id + '/resume', { method: 'POST' });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      alert(err.detail || 'Не удалось продолжить');
+      document.getElementById('btnGenerate').disabled = false;
+      document.getElementById('btnCancel').classList.add('hidden');
+      return;
+    }
+    startPolling();
+  }
+
+  async function deleteProject(id) {
+    if (!confirm('Удалить проект?')) return;
+    await fetch('/api/projects/' + id, { method: 'DELETE' });
+    loadProjects();
+    loadHistory();
+  }
+
+  // ─── DUBBING ───────────────────────────────────────────
+  const dubDropzone = document.getElementById('dubDropzone');
+  const dubFileInput = document.getElementById('dubFile');
+  if (dubDropzone && dubFileInput) {
+    dubDropzone.onclick = () => dubFileInput.click();
+    dubDropzone.ondragover = e => { e.preventDefault(); dubDropzone.classList.add('border-blue-500'); };
+    dubDropzone.ondragleave = () => dubDropzone.classList.remove('border-blue-500');
+    dubDropzone.ondrop = e => {
+      e.preventDefault();
+      dubDropzone.classList.remove('border-blue-500');
+      if (e.dataTransfer.files.length) {
+        dubFileInput.files = e.dataTransfer.files;
+        showDubFileName();
+      }
+    };
+    dubFileInput.onchange = showDubFileName;
+  }
+
+  function showDubFileName() {
+    const f = dubFileInput.files[0];
+    const el = document.getElementById('dubFileName');
+    if (f) {
+      el.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+      el.classList.remove('hidden');
+    }
+  }
+
+  async function loadLumeanTemplates() {
+    const sel = document.getElementById('dubTemplateId');
+    sel.innerHTML = '<option value="">Загрузка...</option>';
+    try {
+      const r = await fetch('/api/lumean/templates');
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        sel.innerHTML = '<option value="">Ошибка: ' + (err.detail || r.status) + '</option>';
+        return;
+      }
+      const d = await r.json();
+      if (!d.templates || !d.templates.length) {
+        sel.innerHTML = '<option value="">Нет шаблонов — создай на lumean.app</option>';
+        return;
+      }
+      sel.innerHTML = d.templates.map(t =>
+        `<option value="${t.id}">${t.name}${t.service_key ? ' (' + t.service_key + ')' : ''}</option>`
+      ).join('');
+    } catch (e) {
+      sel.innerHTML = '<option value="">Ошибка сети</option>';
+    }
+  }
+
+  async function startDubbing() {
+    const file = dubFileInput.files[0];
+    if (!file) { alert('Выбери видео или аудио файл'); return; }
+    const templateId = document.getElementById('dubTemplateId').value;
+    if (!templateId) { alert('Выбери шаблон голоса (нажми Обновить)'); return; }
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('project_name', document.getElementById('dubProjectName').value || 'DubVideo');
+    fd.append('target_lang', document.getElementById('dubTargetLang').value);
+    fd.append('template_id', templateId);
+    fd.append('source_lang', document.getElementById('dubSourceLang').value);
+
+    document.getElementById('btnDub').disabled = true;
+    document.getElementById('btnDubCancel').classList.remove('hidden');
+    document.getElementById('dubProgressBox').classList.remove('hidden');
+    document.getElementById('dubResult').classList.add('hidden');
+
+    const r = await fetch('/api/dub', { method: 'POST', body: fd });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      alert(err.detail || 'Ошибка запуска');
+      document.getElementById('btnDub').disabled = false;
+      document.getElementById('btnDubCancel').classList.add('hidden');
+      return;
+    }
+    startDubPolling();
+  }
+
+  function startDubPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        const pr = await fetch('/api/progress');
+        const p = await pr.json();
+        document.getElementById('dubProgressStage').textContent = p.stage;
+        document.getElementById('dubProgressPercent').textContent = Math.round(p.progress) + '%';
+        document.getElementById('dubProgressBar').style.width = p.progress + '%';
+        document.getElementById('dubProgressMsg').textContent = p.message +
+          (p.scenes_total ? ` (${p.scenes_done}/${p.scenes_total})` : '');
+
+        if (['done', 'error', 'cancelled'].includes(p.stage)) {
+          clearInterval(pollTimer);
+          document.getElementById('btnDub').disabled = false;
+          document.getElementById('btnDubCancel').classList.add('hidden');
+          if (p.stage === 'done') {
+            document.getElementById('dubProgressMsg').textContent = '✓ ' + p.message;
+            const link = document.getElementById('dubDownloadLink');
+            if (p.download_url) {
+              link.href = p.download_url;
+              const fname = p.download_url.split('/').pop() || 'dubbed.mp3';
+              link.setAttribute('download', fname);
+              document.getElementById('dubResult').classList.remove('hidden');
+            } else if (p.project_dir_name) {
+              // fallback: ищем типичное имя
+              link.href = '/projects/' + p.project_dir_name + '/dubbed_' + (document.getElementById('dubTargetLang')?.value || 'es') + '.mp3';
+              link.setAttribute('download', 'dubbed.mp3');
+              document.getElementById('dubResult').classList.remove('hidden');
+            }
+          }
+        }
+      } catch (e) { console.error(e); }
+    }, 1500);
+  }
+
+  // При открытии вкладки Дубляж — подгружаем шаблоны
+  const origShowPage = showPage;
+  showPage = function(name) {
+    origShowPage(name);
+    if (name === 'dub') loadLumeanTemplates();
+  };
+
+  // Init
+  loadSettings();
+</script>
+</body>
+</html>
